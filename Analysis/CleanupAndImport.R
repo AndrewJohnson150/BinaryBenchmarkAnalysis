@@ -13,13 +13,13 @@ library(gridExtra)
 
 ###First step is to load in all the data and make sure it is cleaned up
 
-binSizes <- read_table2("BinSizes.txt", col_names = c("binary","size"))
-metaData <- read_delim("benchmarkMeta.txt", 
+binSizes <- read_table2("Data/BinSizes.txt", col_names = c("binary","size"))
+metaData <- read_delim("Data/benchmarkMeta.txt", 
                        "\t", escape_double = FALSE, col_names = FALSE, 
                        trim_ws = TRUE)
-outputData <- read_csv("BenchmarkToolOutput.txt")
-yaraOutput <- read_csv("YaraOutput.txt")
-benchmarkMeta <- read_csv("benchmarkMeta.txt", 
+outputData <- read_csv("Data/BenchmarkToolOutput.txt")
+yaraOutput <- read_csv("Data/YaraOutput.txt")
+benchmarkMeta <- read_csv("Data/benchmarkMeta.txt", 
                           col_names = FALSE)
 metaDataBinaries <- benchmarkMeta[1]
 
