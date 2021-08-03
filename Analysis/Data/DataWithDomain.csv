@@ -1,4 +1,4 @@
-,binary,cwe_checker,yara_rules,cve_bin_tool,size,compiler,static,Domain
+,binary,cwe_checker,yara_rules,cve_bin_tool,size,compiler,static,domain
 1,3proxy,70,2,0,300624,gcc(Alpine),FALSE,Network
 2,ab,10,0,0,59744,Unk,FALSE,Network
 3,ag,69,3,4,355576,gcc(-),TRUE,System

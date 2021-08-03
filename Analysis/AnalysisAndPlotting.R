@@ -10,37 +10,62 @@ library(rstatix)
 library(quantreg)
 library(grid)
 library(gridExtra)
+require(foreign)
+require(ggplot2)
+require(MASS)
 
-data = read.csv("Data/Data.csv")
+data = read.csv("Data/DataWithDomain.csv")
 data[,"compiler"] <- as.factor(data[,"compiler"])
 data[,"static"] <- as.factor(data[,"static"])
+data[,"domain"] <- as.factor(data[,"domain"])
+mean(data$cwe_checker)
+sd(data$cwe_checker)
+mean(data$cve_bin_tool)
+sd(data$cve_bin_tool)
+mean(data$yara_rules)
+sd(data$yara_rules)
+
+summary(m1 <- glm.nb(cwe_checker ~ size + compiler+static+domain, data = data))
+summary(m2 <- glm.nb(cve_bin_tool ~ size + compiler+static+domain, data = data))
+summary(m3 <- glm.nb(yara_rules ~ size + compiler+static+domain, data = data))
+anova(m1)
+anova(m2)
+anova(m3)
+
+
 
 ###CWE_Checker
 p1<-ggplot(data=data,aes(x=compiler,y=cwe_checker)) +
   geom_boxplot() + stat_compare_means(method = "kruskal.test")
 p2<-ggplot(data=data,aes(x=static,y=cwe_checker)) +
   geom_boxplot() + stat_compare_means(method = "kruskal.test")
-p3<-ggplot(data=data,aes(x=size,y=cwe_checker)) +
+p3<-ggplot(data=data,aes(x=domain,y=cwe_checker)) +
+  geom_boxplot() + stat_compare_means(method = "kruskal.test")
+p4<-ggplot(data=data,aes(x=size,y=cwe_checker)) +
   geom_point()+stat_cor(method="spearman")
-grid.arrange(p1, p2, p3, ncol=3, top = textGrob("CWE_Checker Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
+grid.arrange(p1, p2, p3, p4, ncol=2,nrow=2, top = textGrob("CWE_Checker Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
 
-  ###Yara-Rules
+###Yara-Rules
 p1<-ggplot(data=data,aes(x=compiler,y=yara_rules)) +
   geom_boxplot() + stat_compare_means(method = "kruskal.test")
 p2<-ggplot(data=data,aes(x=static,y=yara_rules)) +
   geom_boxplot() + stat_compare_means(method = "kruskal.test")
-p3<-ggplot(data=data,aes(x=size,y=yara_rules)) +
+p3<-ggplot(data=data,aes(x=domain,y=yara_rules)) +
+  geom_boxplot() + stat_compare_means(method = "kruskal.test")
+p4<-ggplot(data=data,aes(x=size,y=yara_rules)) +
   geom_point()+stat_cor(method="spearman")
-grid.arrange(p1, p2, p3, ncol=3, top = textGrob("Yara Rules Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
+grid.arrange(p1, p2, p3, p4, ncol=2,nrow=2, top = textGrob("Yara Rules Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
 
 ### CVE-Bin-Tool
 p1<-ggplot(data=data,aes(x=compiler,y=cve_bin_tool)) +
   geom_boxplot() + stat_compare_means(method = "kruskal.test")
 p2<-ggplot(data=data,aes(x=static,y=cve_bin_tool)) +
   geom_boxplot() + stat_compare_means(method = "kruskal.test")
-p3<-ggplot(data=data,aes(x=size,y=cve_bin_tool)) +
+p3<-ggplot(data=data,aes(x=domain,y=cve_bin_tool)) +
+  geom_boxplot() + stat_compare_meanscve_bin_tool
+p4<-ggplot(data=data,aes(x=size,y=cve_bin_tool)) +
   geom_point()+stat_cor(method="spearman")
-grid.arrange(p1, p2, p3, ncol=3, top = textGrob("CVE-Bin-Tool Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
+grid.arrange(p1, p2, p3, p4, ncol=2,nrow=2, top = textGrob("CVE-Bin-Tool Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
 
 #factor histograms
 p1<- ggplot(data=data,aes(x=compiler)) + geom_bar()
@@ -52,6 +77,12 @@ grid.arrange(p1, p2, p3, ncol=3, top = textGrob("Factor Histograms",gp=gpar(font
 p1 <- ggplot(data=data,aes(x=compiler,y=size)) + geom_boxplot()+ stat_compare_means(method = "kruskal.test")
 p2 <- ggplot(data=data,aes(x=static,y=size)) + geom_boxplot()+ stat_compare_means(method = "kruskal.test")
 grid.arrange(p1, p2, ncol=2, top = textGrob("Size Compared to Other Factors",gp=gpar(fontsize=20,font=1)))
+
+###Tool finding histograms
+p1<- ggplot(data=data,aes(x=cwe_checker)) + geom_histogram(bins=50)
+p2<- ggplot(data=data,aes(x=cve_bin_tool)) + geom_histogram(bins=50)
+p3<- ggplot(data=data,aes(x=yara_rules)) + geom_histogram(bins=50)
+grid.arrange(p1, p2, p3, ncol=3, top = textGrob("Factor Histograms",gp=gpar(fontsize=20,font=1)))
 
 
 ###Original tool histograms compared to log(data)

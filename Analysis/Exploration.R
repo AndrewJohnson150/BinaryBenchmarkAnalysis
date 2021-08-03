@@ -1,8 +1,21 @@
+library(readr)
+library(tidyverse)
+library(ggplot2)
+library(GGally)
+library(ggfortify)
+library(FactoMineR)
+library(factoextra)
+library(ggpubr)
+library(rstatix)
+library(quantreg)
+library(grid)
+library(gridExtra)
 library(car)
 
-data = read.csv("Data/Data.csv")
+data = read.csv("Data/DataWithDomain.csv")
 data[,"compiler"] <- as.factor(data[,"compiler"])
 data[,"static"] <- as.factor(data[,"static"])
+data[,"domain"] <- as.factor(data[,"domain"])
 
 summary(data[,-which(names(data)=="binary")])
 
@@ -10,9 +23,9 @@ ggpairs(data[,!names(data) %in% c("binary","X")],aes(colour=static,alpha=0.5))
 ggpairs(data[,!names(data) %in% c("binary","X")])
 
 
-data[,c("size","static","compiler","cwe_checker")] %>% ggpairs(upper = list(continuous = wrap("cor", method = "spearman")), diag = list(continuous = function(...) ggally_densityDiag(...) + theme(axis.text = element_blank(), axis.ticks = element_blank())))
-data[,c("size","static","compiler","yara_rules")]%>% ggpairs(upper = list(continuous = wrap("cor", method = "spearman")), diag = list(continuous = function(...) ggally_densityDiag(...) + theme(axis.text = element_blank(), axis.ticks = element_blank())))
-data[,c("size","static","compiler","cve_bin_tool")]%>% ggpairs(upper = list(continuous = wrap("cor", method = "spearman")), diag = list(continuous = function(...) ggally_densityDiag(...) + theme(axis.text = element_blank(), axis.ticks = element_blank())))
+data[,c("size","static","compiler","cwe_checker","domain")] %>% ggpairs(upper = list(continuous = wrap("cor", method = "spearman")), diag = list(continuous = function(...) ggally_densityDiag(...) + theme(axis.text = element_blank(), axis.ticks = element_blank())))
+data[,c("size","static","compiler","yara_rules","domain")]%>% ggpairs(upper = list(continuous = wrap("cor", method = "spearman")), diag = list(continuous = function(...) ggally_densityDiag(...) + theme(axis.text = element_blank(), axis.ticks = element_blank())))
+data[,c("size","static","compiler","cve_bin_tool","domain")]%>% ggpairs(upper = list(continuous = wrap("cor", method = "spearman")), diag = list(continuous = function(...) ggally_densityDiag(...) + theme(axis.text = element_blank(), axis.ticks = element_blank())))
 
 ggplot(data=data,aes(x=compiler,y=cwe_checker)) +
   geom_boxplot()
@@ -29,7 +42,7 @@ plot(modelCVE)
 (anova(modelCVE))
 
 
-modelCWE <- lm(log(cwe_checker)~size+compiler+static,data=data[,-c(332)])
+modelCWE <- lm(log(cwe_checker)~size+compiler+static+domain,data=data[-c(332),])
 plot(modelCWE)
 (anova(modelCWE))
 summary(modelCWE)
