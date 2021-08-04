@@ -26,13 +26,19 @@ mean(data$yara_rules)
 sd(data$yara_rules)
 
 summary(m1 <- glm.nb(cwe_checker ~ size + compiler+static+domain, data = data))
-summary(m2 <- glm.nb(cve_bin_tool ~ size + compiler+static+domain, data = data))
+summary(m2 <- glm.nb(cve_bin_tool ~ log(size) + compiler+static+domain, data = data))
 summary(m3 <- glm.nb(yara_rules ~ size + compiler+static+domain, data = data))
 anova(m1)
 anova(m2)
 anova(m3)
 
 
+#factor histograms
+p1<- ggplot(data=data,aes(x=compiler)) + geom_bar()
+p2<- ggplot(data=data,aes(x=static)) + geom_bar()
+p3<- ggplot(data=data,aes(x=size)) + geom_histogram(bins=50)
+p4<- ggplot(data=data,aes(x=domain)) + geom_bar()
+grid.arrange(p1, p2, p3,p4, ncol=2,nrow=2, top = textGrob("Factor Distributions",gp=gpar(fontsize=20,font=1)))
 
 ###CWE_Checker
 p1<-ggplot(data=data,aes(x=compiler,y=cwe_checker)) +
@@ -67,22 +73,18 @@ p4<-ggplot(data=data,aes(x=size,y=cve_bin_tool)) +
   geom_point()+stat_cor(method="spearman")
 grid.arrange(p1, p2, p3, p4, ncol=2,nrow=2, top = textGrob("CVE-Bin-Tool Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
 
-#factor histograms
-p1<- ggplot(data=data,aes(x=compiler)) + geom_bar()
-p2<- ggplot(data=data,aes(x=static)) + geom_bar()
-p3<- ggplot(data=data,aes(x=size)) + geom_histogram(bins=50)
-grid.arrange(p1, p2, p3, ncol=3, top = textGrob("Factor Histograms",gp=gpar(fontsize=20,font=1)))
 
-#Size compared to compiler, static with KW test
+#Size compared to compiler, static, and domain with KW test
 p1 <- ggplot(data=data,aes(x=compiler,y=size)) + geom_boxplot()+ stat_compare_means(method = "kruskal.test")
 p2 <- ggplot(data=data,aes(x=static,y=size)) + geom_boxplot()+ stat_compare_means(method = "kruskal.test")
-grid.arrange(p1, p2, ncol=2, top = textGrob("Size Compared to Other Factors",gp=gpar(fontsize=20,font=1)))
+p3 <- ggplot(data=data,aes(x=domain,y=size)) + geom_boxplot()+ stat_compare_means(method = "kruskal.test")
+grid.arrange(p1, p2, p3, ncol=3, top = textGrob("Size Compared to Other Factors",gp=gpar(fontsize=20,font=1)))
 
 ###Tool finding histograms
 p1<- ggplot(data=data,aes(x=cwe_checker)) + geom_histogram(bins=50)
 p2<- ggplot(data=data,aes(x=cve_bin_tool)) + geom_histogram(bins=50)
 p3<- ggplot(data=data,aes(x=yara_rules)) + geom_histogram(bins=50)
-grid.arrange(p1, p2, p3, ncol=3, top = textGrob("Factor Histograms",gp=gpar(fontsize=20,font=1)))
+grid.arrange(p1, p2, p3, ncol=3, top = textGrob("Tool Output Histograms",gp=gpar(fontsize=20,font=1)))
 
 
 ###Original tool histograms compared to log(data)
@@ -93,3 +95,4 @@ p4<- ggplot(data=data,aes(x=log(cwe_checker+1))) + geom_histogram(bins=50)
 p5<- ggplot(data=data,aes(x=log(cve_bin_tool+1))) + geom_histogram(bins=50)
 p6<- ggplot(data=data,aes(x=log(yara_rules+1))) + geom_histogram(bins=50)
 grid.arrange(p1, p2, p3,p4,p5,p6, ncol=3,nrow=2, top = textGrob("Tool Output Compared to Log(Tool Output)",gp=gpar(fontsize=20,font=1)))
+
