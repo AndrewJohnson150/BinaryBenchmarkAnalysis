@@ -27,7 +27,7 @@ data[,c("size","static","compiler","cwe_checker","domain")] %>% ggpairs(upper = 
 data[,c("size","static","compiler","yara_rules","domain")]%>% ggpairs(upper = list(continuous = wrap("cor", method = "spearman")), diag = list(continuous = function(...) ggally_densityDiag(...) + theme(axis.text = element_blank(), axis.ticks = element_blank())))
 data[,c("size","static","compiler","cve_bin_tool","domain")]%>% ggpairs(upper = list(continuous = wrap("cor", method = "spearman")), diag = list(continuous = function(...) ggally_densityDiag(...) + theme(axis.text = element_blank(), axis.ticks = element_blank())))
 
-ggplot(data=data,aes(x=compiler,y=cwe_checker)) +
+ ggplot(data=data,aes(x=compiler,y=cwe_checker)) +
   geom_boxplot()
 ggplot(data=data,aes(x=compiler,y='cve_bin_tool')) +
   geom_boxplot()
@@ -137,6 +137,7 @@ summary(lm.yara)
 summary(lm.cve)
 
 data[,!names(data) %in% c("binary")] %>% ggpairs(upper = list(continuous = wrap("cor", method = "spearman")), diag = list(continuous = function(...) ggally_densityDiag(...) + theme(axis.text = element_blank(), axis.ticks = element_blank())))
+
 
 
 

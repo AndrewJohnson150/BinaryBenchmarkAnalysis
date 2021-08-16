@@ -13,24 +13,48 @@ library(gridExtra)
 require(foreign)
 require(ggplot2)
 require(MASS)
+library(pscl)
+library(car)
 
-data = read.csv("Data/DataWithDomain.csv")
+data = read.csv("Data/DataWithDomainNoDependency.csv")
+
+#Turn compiler into a binary factor
+for (i in 1:nrow(data)) {
+  if (data[i,"compiler"]!="Unk") 
+    data[i,"compiler"] <- "GCC"
+}
+
 data[,"compiler"] <- as.factor(data[,"compiler"])
 data[,"static"] <- as.factor(data[,"static"])
 data[,"domain"] <- as.factor(data[,"domain"])
-mean(data$cwe_checker)
-sd(data$cwe_checker)
-mean(data$cve_bin_tool)
-sd(data$cve_bin_tool)
-mean(data$yara_rules)
-sd(data$yara_rules)
+ 
+summary(m1 <- glm.nb(cwe_checker ~ size +static+domain+compiler, data = data))
+Anova(m1)
 
-summary(m1 <- glm.nb(cwe_checker ~ size + compiler+static+domain, data = data))
-summary(m2 <- glm.nb(cve_bin_tool ~ log(size) + compiler+static+domain, data = data))
-summary(m3 <- glm.nb(yara_rules ~ size + compiler+static+domain, data = data))
-anova(m1)
-anova(m2)
-anova(m3)
+summary(m2 <- zeroinfl(cve_bin_tool ~ scale(size) + static+domain+compiler|scale(size) + static+domain+compiler, data = data,dist = "negbin"))
+Anova(m2)
+
+summary(m3 <- zeroinfl(yara_rules ~ scale(size) + static+domain+compiler|scale(size) + static+domain+compiler, data = data,dist = "negbin"))
+Anova(m3)
+
+#Interpretation
+## Exponentiated coefficients, cwe_checker
+expCoefm1 <- exp(coef((m1)))
+expCoefm1
+
+## Exponentiated coefficients, cve-bin-tool
+expCoefm2 <- exp(coef((m2)))
+expCoefm2 <- matrix(expCoefm2,ncol=2)
+rownames(expCoefm2) <- names(coef(m1))
+colnames(expCoefm2) <- c("Count_model","Zero_inflation_model")
+expCoefm2
+
+## Exponentiated coefficients, yara-rules
+expCoefm3 <- exp(coef((m3)))
+expCoefm3 <- matrix(expCoefm3,ncol=2)
+rownames(expCoefm3) <- names(coef(m1))
+colnames(expCoefm3) <- c("Count_model","Zero_inflation_model")
+expCoefm3
 
 
 #factor histograms
@@ -68,7 +92,7 @@ p1<-ggplot(data=data,aes(x=compiler,y=cve_bin_tool)) +
 p2<-ggplot(data=data,aes(x=static,y=cve_bin_tool)) +
   geom_boxplot() + stat_compare_means(method = "kruskal.test")
 p3<-ggplot(data=data,aes(x=domain,y=cve_bin_tool)) +
-  geom_boxplot() + stat_compare_meanscve_bin_tool
+  geom_boxplot() + stat_compare_means(method = "kruskal.test")
 p4<-ggplot(data=data,aes(x=size,y=cve_bin_tool)) +
   geom_point()+stat_cor(method="spearman")
 grid.arrange(p1, p2, p3, p4, ncol=2,nrow=2, top = textGrob("CVE-Bin-Tool Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
