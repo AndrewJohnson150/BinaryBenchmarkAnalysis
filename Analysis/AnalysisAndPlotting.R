@@ -10,11 +10,12 @@ library(rstatix)
 library(quantreg)
 library(grid)
 library(gridExtra)
-require(foreign)
-require(ggplot2)
-require(MASS)
+library(foreign)
+library(ggplot2)
+library(MASS)
 library(pscl)
 library(car)
+library(effects)
 
 data = read.csv("Data/DataWithDomainNoDependency.csv")
 
@@ -27,34 +28,11 @@ for (i in 1:nrow(data)) {
 data[,"compiler"] <- as.factor(data[,"compiler"])
 data[,"static"] <- as.factor(data[,"static"])
 data[,"domain"] <- as.factor(data[,"domain"])
- 
-summary(m1 <- glm.nb(cwe_checker ~ size +static+domain+compiler, data = data))
-Anova(m1)
+data[,"cbtFindings"]<- ifelse(data[,"cve_bin_tool"]==0,0,1)
+data[,"yrFindings"]<- ifelse(data[,"yara_rules"]==0,0,1)
 
-summary(m2 <- zeroinfl(cve_bin_tool ~ scale(size) + static+domain+compiler|scale(size) + static+domain+compiler, data = data,dist = "negbin"))
-Anova(m2)
-
-summary(m3 <- zeroinfl(yara_rules ~ scale(size) + static+domain+compiler|scale(size) + static+domain+compiler, data = data,dist = "negbin"))
-Anova(m3)
-
-#Interpretation
-## Exponentiated coefficients, cwe_checker
-expCoefm1 <- exp(coef((m1)))
-expCoefm1
-
-## Exponentiated coefficients, cve-bin-tool
-expCoefm2 <- exp(coef((m2)))
-expCoefm2 <- matrix(expCoefm2,ncol=2)
-rownames(expCoefm2) <- names(coef(m1))
-colnames(expCoefm2) <- c("Count_model","Zero_inflation_model")
-expCoefm2
-
-## Exponentiated coefficients, yara-rules
-expCoefm3 <- exp(coef((m3)))
-expCoefm3 <- matrix(expCoefm3,ncol=2)
-rownames(expCoefm3) <- names(coef(m1))
-colnames(expCoefm3) <- c("Count_model","Zero_inflation_model")
-expCoefm3
+data[,"cbtFindings"]<- as.factor(data[,"cbtFindings"])
+data[,"yrFindings"]<- as.factor(data[,"yrFindings"])
 
 
 #factor histograms
@@ -75,6 +53,29 @@ p4<-ggplot(data=data,aes(x=size,y=cwe_checker)) +
   geom_point()+stat_cor(method="spearman")
 grid.arrange(p1, p2, p3, p4, ncol=2,nrow=2, top = textGrob("CWE_Checker Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
 
+###Yara-Rules non-zeros
+yrData <- data[which(data$yrFindings==1),]
+p1<-ggplot(data=yrData,aes(x=compiler,y=yara_rules)) +
+  geom_boxplot() + stat_compare_means(method = "kruskal.test")
+p2<-ggplot(data=yrData,aes(x=static,y=yara_rules)) +
+  geom_boxplot() + stat_compare_means(method = "kruskal.test")
+p3<-ggplot(data=yrData,aes(x=domain,y=yara_rules)) +
+  geom_boxplot() + stat_compare_means(method = "kruskal.test")
+p4<-ggplot(data=yrData,aes(x=scale(size),y=yara_rules)) +
+  geom_point()+stat_cor(method="spearman")
+grid.arrange(p1, p2, p3, p4, ncol=2,nrow=2, top = textGrob("Non-Zero Yara Rules Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
+
+###Yara-Rules zeros
+p1<-ggplot(data=data,aes(x=compiler,fill=yrFindings)) +
+  geom_bar() 
+p2<-ggplot(data=data,aes(x=static,fill=yrFindings)) +
+  geom_bar() 
+p3<-ggplot(data=data,aes(x=domain,fill=yrFindings)) +
+  geom_bar() 
+p4<-ggplot(data=data,aes(x=scale(size),y=yrFindings)) +
+  geom_jitter()
+grid.arrange(p1, p2, p3, p4, ncol=2,nrow=2, top = textGrob("Zero vs Non-Zero Yara Rules Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
+
 ###Yara-Rules
 p1<-ggplot(data=data,aes(x=compiler,y=yara_rules)) +
   geom_boxplot() + stat_compare_means(method = "kruskal.test")
@@ -82,9 +83,34 @@ p2<-ggplot(data=data,aes(x=static,y=yara_rules)) +
   geom_boxplot() + stat_compare_means(method = "kruskal.test")
 p3<-ggplot(data=data,aes(x=domain,y=yara_rules)) +
   geom_boxplot() + stat_compare_means(method = "kruskal.test")
-p4<-ggplot(data=data,aes(x=size,y=yara_rules)) +
+p4<-ggplot(data=data,aes(x=scale(size),y=yara_rules)) +
   geom_point()+stat_cor(method="spearman")
 grid.arrange(p1, p2, p3, p4, ncol=2,nrow=2, top = textGrob("Yara Rules Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
+
+
+
+### CVE-Bin-Tool non-zeros
+cbtFindings <- data[which(data$cbtFindings==1),]
+p1<-ggplot(data=cbtFindings,aes(x=compiler,y=cve_bin_tool)) +
+  geom_boxplot() 
+p2<-ggplot(data=cbtFindings,aes(x=static,y=cve_bin_tool)) +
+  geom_boxplot() 
+p3<-ggplot(data=cbtFindings,aes(x=domain,y=cve_bin_tool)) +
+  geom_boxplot() 
+p4<-ggplot(data=cbtFindings,aes(x=scale(size),y=cve_bin_tool)) +
+  geom_point()
+grid.arrange(p1, p2, p3, p4, ncol=2,nrow=2, top = textGrob("Non-Zero CVE-Bin-Tool Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
+
+### CVE-Bin-Tool zeros
+p1<-ggplot(data=data,aes(x=compiler,fill=cbtFindings)) +
+  geom_bar() 
+p2<-ggplot(data=data,aes(x=static,fill=cbtFindings)) +
+  geom_bar() 
+p3<-ggplot(data=data,aes(x=domain,fill=cbtFindings)) +
+  geom_bar() 
+p4<-ggplot(data=data,aes(x=scale(size),y=cbtFindings)) +
+  geom_jitter()
+grid.arrange(p1, p2, p3, p4, ncol=2,nrow=2, top = textGrob("Zero vs Non-Zero CVE-Bin-Tool Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
 
 ### CVE-Bin-Tool
 p1<-ggplot(data=data,aes(x=compiler,y=cve_bin_tool)) +
@@ -93,7 +119,7 @@ p2<-ggplot(data=data,aes(x=static,y=cve_bin_tool)) +
   geom_boxplot() + stat_compare_means(method = "kruskal.test")
 p3<-ggplot(data=data,aes(x=domain,y=cve_bin_tool)) +
   geom_boxplot() + stat_compare_means(method = "kruskal.test")
-p4<-ggplot(data=data,aes(x=size,y=cve_bin_tool)) +
+p4<-ggplot(data=data,aes(x=scale(size),y=cve_bin_tool)) +
   geom_point()+stat_cor(method="spearman")
 grid.arrange(p1, p2, p3, p4, ncol=2,nrow=2, top = textGrob("CVE-Bin-Tool Output Compared to Factors",gp=gpar(fontsize=20,font=1)))
 
